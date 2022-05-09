@@ -1,238 +1,283 @@
 package ir.hm.ramifood
 
+import android.content.Context
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.view.KeyEvent
-import android.view.View
-import android.view.animation.BounceInterpolator
-import android.view.animation.OvershootInterpolator
+import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.core.widget.addTextChangedListener
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import ir.hm.ramifood.Models.Food
-import ir.hm.ramifood.databinding.ActivityMainBinding
-import ir.hm.ramifood.databinding.DialogAddNewItemBinding
-import ir.hm.ramifood.databinding.DialogDeletItemBinding
-import ir.hm.ramifood.databinding.DialogUpdateItemBinding
-import jp.wasabeef.recyclerview.adapters.AlphaInAnimationAdapter
-import jp.wasabeef.recyclerview.animators.SlideInLeftAnimator
-import jp.wasabeef.recyclerview.animators.SlideInUpAnimator
+import ir.hm.ramifood.databinding.*
+import ir.hm.ramifood.room.FoodDao
+import ir.hm.ramifood.room.MyDatabase
+
+
+const val BASE_URL_IMAGE = "https://dunijet.ir/YaghootAndroidFiles/DuniFoodSimple/food"
 
 class MainActivity : AppCompatActivity(), FoodAdapter.FoodEvents {
     lateinit var binding: ActivityMainBinding
     lateinit var myAdapter: FoodAdapter
+    lateinit var foodDao: FoodDao
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // how to use recycler view :
-        // 1. create view of recyclerView in activity_main.xml
-        // 2. create item for recyclerView
-        // 3. create adapter and view holder for recyclerView
-        // 4. set adapter to recyclerView and set layout manager
 
-        val foodList = arrayListOf(
+        foodDao = MyDatabase.getDatabase(this).foodDao
 
-            Food(
-                "Hamburger",
-                "15",
-                "3",
-                "Isfahan, Iran",
-                "https://dunijet.ir/YaghootAndroidFiles/DuniFoodSimple/food1.jpg",
-                20,
-                4.5f
-            ),
-            Food(
-                "Grilled fish",
-                "20",
-                "2.1",
-                "Tehran, Iran",
-                "https://dunijet.ir/YaghootAndroidFiles/DuniFoodSimple/food2.jpg",
-                10,
-                4f
-            ),
-            Food(
-                "Lasania",
-                "40",
-                "1.4",
-                "Isfahan, Iran",
-                "https://dunijet.ir/YaghootAndroidFiles/DuniFoodSimple/food3.jpg",
-                30,
-                2f
-            ),
-            Food(
-                "pizza",
-                "10",
-                "2.5",
-                "Zahedan, Iran",
-                "https://dunijet.ir/YaghootAndroidFiles/DuniFoodSimple/food4.jpg",
-                80,
-                1.5f
-            ),
-            Food(
-                "Sushi",
-                "20",
-                "3.2",
-                "Mashhad, Iran",
-                "https://dunijet.ir/YaghootAndroidFiles/DuniFoodSimple/food5.jpg",
-                200,
-                3f
-            ),
-            Food(
-                "Roasted Fish",
-                "40",
-                "3.7",
-                "Jolfa, Iran",
-                "https://dunijet.ir/YaghootAndroidFiles/DuniFoodSimple/food6.jpg",
-                50,
-                3.5f
-            ),
-            Food(
-                "Fried chicken",
-                "70",
-                "3.5",
-                "NewYork, USA",
-                "https://dunijet.ir/YaghootAndroidFiles/DuniFoodSimple/food7.jpg",
-                70,
-                2.5f
-            ),
-            Food(
-                "Vegetable salad",
-                "12",
-                "3.6",
-                "Berlin, Germany",
-                "https://dunijet.ir/YaghootAndroidFiles/DuniFoodSimple/food8.jpg",
-                40,
-                4.5f
-            ),
-            Food(
-                "Grilled chicken",
-                "10",
-                "3.7",
-                "Beijing, China",
-                "https://dunijet.ir/YaghootAndroidFiles/DuniFoodSimple/food9.jpg",
-                15,
-                5f
-            ),
-            Food(
-                "Baryooni",
-                "16",
-                "10",
-                "Ilam, Iran",
-                "https://dunijet.ir/YaghootAndroidFiles/DuniFoodSimple/food10.jpg",
-                28,
-                4.5f
-            ),
-            Food(
-                "Ghorme Sabzi",
-                "11.5",
-                "7.5",
-                "Karaj, Iran",
-                "https://dunijet.ir/YaghootAndroidFiles/DuniFoodSimple/food11.jpg",
-                27,
-                5f
-            ),
-            Food(
-                "Rice",
-                "12.5",
-                "2.4",
-                "Shiraz, Iran",
-                "https://dunijet.ir/YaghootAndroidFiles/DuniFoodSimple/food12.jpg",
-                35,
-                2.5f
-            ),
-        )
+        val sharedPreferences = getSharedPreferences("first_run", Context.MODE_PRIVATE)
 
+        if (sharedPreferences.getBoolean("first_run", true)) {
+            firstRun()
+            sharedPreferences.edit().putBoolean("first_run", false).apply()
+        }
 
-        myAdapter = FoodAdapter(foodList.clone() as ArrayList<Food>, this)
-        binding.recyclerMain.adapter = myAdapter
-        binding.recyclerMain.layoutManager = LinearLayoutManager(this, RecyclerView.VERTICAL, false)
+        showAllData()
 
+        binding.btnDeleteAll.setOnClickListener {
 
-        binding.btnAddFood.setOnClickListener {
-
-            val dialog = AlertDialog.Builder(this).create()
-            val bindingDialog = DialogAddNewItemBinding.inflate(layoutInflater)
-            dialog.setView(bindingDialog.root)
-            dialog.setCancelable(true)
-            dialog.show()
-
-
-            bindingDialog.dialogBtnAdd.setOnClickListener {
-
-                if (
-
-                    bindingDialog.dialogEdtFoodName.length() > 0 &&
-                    bindingDialog.dialogEdtFoodPrice.length() > 0 &&
-                    bindingDialog.dialogEdtFoodLocation.length() > 0 &&
-                    bindingDialog.dialogEdtFoodDistance.length() > 0
-
-                ) {
-
-                    val txtName = bindingDialog.dialogEdtFoodName.text.toString()
-                    val txtLocation = bindingDialog.dialogEdtFoodLocation.text.toString()
-                    val txtPrice = bindingDialog.dialogEdtFoodPrice.text.toString()
-                    val txtDistace = bindingDialog.dialogEdtFoodDistance.text.toString()
-                    val txtRatingNumber: Int = (1..150).random()
-                    val ratingBarStar: Float = (1..5).random().toFloat()
-
-                    val randomForUrl = (0 until 12).random()
-                    val urlPic = foodList[randomForUrl].urlImage
-
-                    // create new food to add to recycler view
-                    val newFood = Food(
-                        txtName,
-                        txtPrice,
-                        txtDistace,
-                        txtLocation,
-                        urlPic,
-                        txtRatingNumber,
-                        ratingBarStar
-                    )
-
-                    myAdapter.addFood(newFood)
-                    dialog.dismiss()
-                    binding.recyclerMain.scrollToPosition(0)
-
-                } else {
-
-                    Toast.makeText(this, "Please fill all of the blank!", Toast.LENGTH_SHORT).show()
-                }
-            }
-
+            removeAllFoods()
 
         }
 
+        binding.btnAddFood.setOnClickListener {
+
+            addNewFood()
+
+        }
 
         binding.edtSearch.addTextChangedListener { editTextInput ->
-
-            if (editTextInput!!.isNotEmpty()) {
-
-                // filter list
-                val cloneList = foodList.clone() as ArrayList<Food>
-                val filterList = cloneList.filter { foodItem ->
-
-                    foodItem.txtSubject.lowercase().contains(editTextInput.toString().lowercase())
-
-                }
-
-                myAdapter.setData(ArrayList(filterList))
-
-            } else {
-
-                // show all data
-                myAdapter.setData(foodList.clone() as ArrayList<Food>)
+            searchOnDataBase(editTextInput.toString())
+        }
 
 
-            }
+    }
 
+    private fun searchOnDataBase(editTextInput: String) {
+
+        if (editTextInput.isNotEmpty()) {
+
+            // search 'R'
+            val searchData = foodDao.searchFoods(editTextInput)
+            myAdapter.setData( ArrayList(searchData) )
+
+        } else {
+
+            // show all data
+            val data = foodDao.getAllFoods()
+            myAdapter.setData( ArrayList(data) )
 
         }
 
     }
+
+    private fun removeAllFoods() {
+
+        val dialog = AlertDialog.Builder(this).create()
+        val dialogDeletAllBinding = DialogDeleteAllItemsBinding.inflate(layoutInflater)
+        dialog.setView(dialogDeletAllBinding.root)
+        dialog.setCancelable(true)
+        dialog.show()
+
+        dialogDeletAllBinding.dialogBtnDeleteCancel.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialogDeletAllBinding.dialogBtnDeleteSure.setOnClickListener {
+            dialog.dismiss()
+            foodDao.deleteAllFoods()
+            showAllData()
+        }
+
+    }
+
+    private fun firstRun() {
+
+        val foodList = listOf(
+            Food(
+                txtSubject = "Hamburger",
+                txtPrice = "15",
+                txtDistance = "3",
+                txtLocation = "Isfahan, Iran",
+                urlImage = "https://dunijet.ir/YaghootAndroidFiles/DuniFoodSimple/food1.jpg",
+                numOfRating = 20,
+                rating = 4.5f
+            ),
+            Food(
+                txtSubject = "Grilled fish",
+                txtPrice = "20",
+                txtDistance = "2.1",
+                txtLocation = "Tehran, Iran",
+                urlImage = "https://dunijet.ir/YaghootAndroidFiles/DuniFoodSimple/food2.jpg",
+                numOfRating = 10,
+                rating = 4f
+            ),
+            Food(
+                txtSubject = "Lasania",
+                txtPrice = "40",
+                txtDistance = "1.4",
+                txtLocation = "Isfahan, Iran",
+                urlImage = "https://dunijet.ir/YaghootAndroidFiles/DuniFoodSimple/food3.jpg",
+                numOfRating = 30,
+                rating = 2f
+            ),
+            Food(
+                txtSubject = "pizza",
+                txtPrice = "10",
+                txtDistance = "2.5",
+                txtLocation = "Zahedan, Iran",
+                urlImage = "https://dunijet.ir/YaghootAndroidFiles/DuniFoodSimple/food4.jpg",
+                numOfRating = 80,
+                rating = 1.5f
+            ),
+            Food(
+                txtSubject = "Sushi",
+                txtPrice = "20",
+                txtDistance = "3.2",
+                txtLocation = "Mashhad, Iran",
+                urlImage = "https://dunijet.ir/YaghootAndroidFiles/DuniFoodSimple/food5.jpg",
+                numOfRating = 200,
+                rating = 3f
+            ),
+            Food(
+                txtSubject = "Roasted Fish",
+                txtPrice = "40",
+                txtDistance = "3.7",
+                txtLocation = "Jolfa, Iran",
+                urlImage = "https://dunijet.ir/YaghootAndroidFiles/DuniFoodSimple/food6.jpg",
+                numOfRating = 50,
+                rating = 3.5f
+            ),
+            Food(
+                txtSubject = "Fried chicken",
+                txtPrice = "70",
+                txtDistance = "3.5",
+                txtLocation = "NewYork, USA",
+                urlImage = "https://dunijet.ir/YaghootAndroidFiles/DuniFoodSimple/food7.jpg",
+                numOfRating = 70,
+                rating = 2.5f
+            ),
+            Food(
+                txtSubject = "Vegetable salad",
+                txtPrice = "12",
+                txtDistance = "3.6",
+                txtLocation = "Berlin, Germany",
+                urlImage = "https://dunijet.ir/YaghootAndroidFiles/DuniFoodSimple/food8.jpg",
+                numOfRating = 40,
+                rating = 4.5f
+            ),
+            Food(
+                txtSubject = "Grilled chicken",
+                txtPrice = "10",
+                txtDistance = "3.7",
+                txtLocation = "Beijing, China",
+                urlImage = "https://dunijet.ir/YaghootAndroidFiles/DuniFoodSimple/food9.jpg",
+                numOfRating = 15,
+                rating = 5f
+            ),
+            Food(
+                txtSubject = "Baryooni",
+                txtPrice = "16",
+                txtDistance = "10",
+                txtLocation = "Ilam, Iran",
+                urlImage = "https://dunijet.ir/YaghootAndroidFiles/DuniFoodSimple/food10.jpg",
+                numOfRating = 28,
+                rating = 4.5f
+            ),
+            Food(
+                txtSubject = "Ghorme Sabzi",
+                txtPrice = "11.5",
+                txtDistance = "7.5",
+                txtLocation = "Karaj, Iran",
+                urlImage = "https://dunijet.ir/YaghootAndroidFiles/DuniFoodSimple/food11.jpg",
+                numOfRating = 27,
+                rating = 5f
+            ),
+            Food(
+                txtSubject = "Rice",
+                txtPrice = "12.5",
+                txtDistance = "2.4",
+                txtLocation = "Shiraz, Iran",
+                urlImage = "https://dunijet.ir/YaghootAndroidFiles/DuniFoodSimple/food12.jpg",
+                numOfRating = 35,
+                rating = 2.5f
+            ),
+        )
+        foodDao.insertAllFood(foodList)
+
+    }
+
+    private fun showAllData() {
+
+        val foodData = foodDao.getAllFoods()
+        myAdapter = FoodAdapter(ArrayList(foodData), this)
+        binding.recyclerMain.adapter = myAdapter
+        binding.recyclerMain.layoutManager = LinearLayoutManager(this, RecyclerView.VERTICAL, false)
+
+        Log.v("testLog", foodData.toString())
+    }
+
+    private fun addNewFood() {
+
+        val dialog = AlertDialog.Builder(this).create()
+
+        val dialogBinding = DialogAddNewItemBinding.inflate(layoutInflater)
+        dialog.setView(dialogBinding.root)
+        dialog.setCancelable(true)
+        dialog.show()
+
+        dialogBinding.dialogBtnAdd.setOnClickListener {
+
+            if (
+                dialogBinding.dialogEdtFoodName.length() > 0 &&
+                dialogBinding.dialogEdtFoodLocation.length() > 0 &&
+                dialogBinding.dialogEdtFoodPrice.length() > 0 &&
+                dialogBinding.dialogEdtFoodDistance.length() > 0
+            ) {
+
+                val txtName = dialogBinding.dialogEdtFoodName.text.toString()
+                val txtPrice = dialogBinding.dialogEdtFoodPrice.text.toString()
+                val txtDistance = dialogBinding.dialogEdtFoodDistance.text.toString()
+                val txtCity = dialogBinding.dialogEdtFoodLocation.text.toString()
+                val txtRatingNumber: Int = (1..150).random()
+                val ratingBarStar: Float = (1..5).random().toFloat()
+
+                val randomForUrl = (1 until 12).random()
+                val urlPic = BASE_URL_IMAGE + randomForUrl.toString() + ".jpg"
+
+                val newFood = Food(
+                    txtSubject = txtName,
+                    txtPrice = txtPrice,
+                    txtDistance = txtDistance,
+                    txtLocation = txtCity,
+                    urlImage = urlPic,
+                    numOfRating = txtRatingNumber,
+                    rating = ratingBarStar
+                )
+
+                myAdapter.addFood(newFood)
+                foodDao.insertOrUpdate(newFood)
+
+                dialog.dismiss()
+                binding.recyclerMain.scrollToPosition(0)
+
+
+            } else {
+
+                Toast.makeText(this, "لطفا همه مقادیر را وارد کنید :)", Toast.LENGTH_SHORT)
+                    .show()
+
+            }
+
+        }
+
+
+    }
+
 
     override fun onFoodClicked(food: Food, position: Int) {
 
@@ -271,16 +316,18 @@ class MainActivity : AppCompatActivity(), FoodAdapter.FoodEvents {
                 val txtDistace = dialogUpdateBinding.dialogEdtFoodDistance.text.toString()
 
                 val newFood = Food(
-                    txtName,
-                    txtPrice,
-                    txtDistace,
-                    txtLocation,
-                    food.urlImage,
-                    food.numOfRating,
-                    food.rating
+                    id = food.id,
+                    txtSubject = txtName,
+                    txtPrice = txtPrice,
+                    txtDistance = txtDistace,
+                    txtLocation = txtLocation,
+                    urlImage = food.urlImage,
+                    numOfRating = food.numOfRating,
+                    rating = food.rating
                 )
 
                 myAdapter.updateFood(newFood, position)
+                foodDao.insertOrUpdate(newFood)
                 dialog.dismiss()
 
             } else {
@@ -292,6 +339,7 @@ class MainActivity : AppCompatActivity(), FoodAdapter.FoodEvents {
     }
 
     override fun onFoodLongClicked(food: Food, pos: Int) {
+
         val dialog = AlertDialog.Builder(this).create()
         val dialogDeleteBinding = DialogDeletItemBinding.inflate(layoutInflater)
         dialog.setView(dialogDeleteBinding.root)
@@ -306,6 +354,7 @@ class MainActivity : AppCompatActivity(), FoodAdapter.FoodEvents {
 
             dialog.dismiss()
             myAdapter.removeFood(food, pos)
+            foodDao.deleteFood(food)
 
         }
     }

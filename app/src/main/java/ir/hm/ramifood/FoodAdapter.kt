@@ -1,6 +1,5 @@
 package ir.hm.ramifood
 
-import android.animation.Animator
 import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
@@ -9,13 +8,11 @@ import android.view.animation.AnimationUtils
 import android.widget.ImageView
 import android.widget.RatingBar
 import android.widget.TextView
-import android.widget.Toast
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import ir.hm.ramifood.Models.Food
 import jp.wasabeef.glide.transformations.RoundedCornersTransformation
-import jp.wasabeef.recyclerview.animators.holder.AnimateViewHolder
 
 class FoodAdapter(private val data: ArrayList<Food>, private val foodEvents:FoodEvents) :
     RecyclerView.Adapter<FoodAdapter.FoodViewHolder>() {
@@ -124,5 +121,6 @@ class FoodAdapter(private val data: ArrayList<Food>, private val foodEvents:Food
 
         fun onFoodClicked(food:Food, position: Int)
         fun onFoodLongClicked(food:Food , pos:Int)
+
     }
 }

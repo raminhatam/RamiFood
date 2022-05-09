@@ -3,6 +3,10 @@
   <component name="DesignSurface">
     <option name="filePathToZoomLevelMap">
       <map>
+        <entry key="..\:/Android Studio Save/RamiFood/RamiFood/app/src/main/res/layout/activity_main.xml" value="0.20416666666666666" />
+        <entry key="..\:/Android Studio Save/RamiFood/RamiFood/app/src/main/res/layout/dialog_add_new_item.xml" value="0.20416666666666666" />
+        <entry key="..\:/Android Studio Save/RamiFood/RamiFood/app/src/main/res/layout/dialog_delet_item.xml" value="0.20416666666666666" />
+        <entry key="..\:/Android Studio Save/RamiFood/RamiFood/app/src/main/res/layout/dialog_delete_all_items.xml" value="0.20416666666666666" />
         <entry key="..\:/Android Studio Save/RamiFood/app/src/main/res/drawable/ic_add.xml" value="0.2203125" />
         <entry key="..\:/Android Studio Save/RamiFood/app/src/main/res/drawable/shabe_backgrund_color.xml" value="0.2203125" />
         <entry key="..\:/Android Studio Save/RamiFood/app/src/main/res/drawable/shape_search.xml" value="0.2203125" />
